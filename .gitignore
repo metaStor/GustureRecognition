@@ -1,0 +1,5 @@
+*.jpg
+*.h5
+models/
+.idea/
+__pycache__/
