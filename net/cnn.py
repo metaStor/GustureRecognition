@@ -1,39 +1,8 @@
-import h5py
 import numpy as np
-from sklearn.model_selection import train_test_split
-from keras.utils import np_utils
 import tensorflow as tf
 import math
 import time
 from tensorflow.python.framework import graph_util
-
-
-# load dataset
-def load_dataset():
-    # 划分训练集、测试集
-    data = h5py.File("dataSet/cache/data.h5", "r")
-    X_data = np.array(data['X'])  # data['X']是h5py._hl.dataset.Dataset类型，转化为array
-    Y_data = np.array(data['Y'])
-    # print(type(X_data))
-    X_train, X_test, y_train, y_test = train_test_split(X_data, Y_data, train_size=0.9, test_size=0.1, random_state=22)
-    # print(X_train.shape)
-    # print(y_train[456])
-    # image = Image.fromarray(X_train[456])
-    # image.show()
-    # y_train = y_train.reshape(1,y_train.shape[0])
-    # y_test = y_test.reshape(1,y_test.shape[0])
-    print(X_train.shape)
-    # print(X_train[0])
-    X_train = X_train / 255.  # 归一化
-    X_test = X_test / 255.
-    # print(X_train[0])
-    # one-hot
-    y_train = np_utils.to_categorical(y_train, num_classes=11)
-    print(y_train.shape)
-    y_test = np_utils.to_categorical(y_test, num_classes=11)
-    print(y_test.shape)
-
-    return X_train, X_test, y_train, y_test
 
 
 def weight_variable(shape):
@@ -79,7 +48,7 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
     # Step 2: Partition (shuffled_X, shuffled_Y). Minus the end case.
     num_complete_minibatches = math.floor(
         m / mini_batch_size)  # number of mini batches of size mini_batch_size in your partitionning
-    for k in range(0, num_complete_minibatches):
+    for k in range(0, int(num_complete_minibatches)):
         mini_batch_X = shuffled_X[k * mini_batch_size: k * mini_batch_size + mini_batch_size]
         mini_batch_Y = shuffled_Y[k * mini_batch_size: k * mini_batch_size + mini_batch_size]
         mini_batch = (mini_batch_X, mini_batch_Y)
@@ -100,6 +69,7 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
     y = tf.placeholder(tf.float32, [None, 11], name="input_y")
     kp = tf.placeholder_with_default(1.0, shape=(), name="keep_prob")
     lam = tf.placeholder(tf.float32, name="lamda")
+
     # conv1
     W_conv1 = weight_variable([5, 5, 3, 32])
     b_conv1 = bias_variable([32])
@@ -130,6 +100,7 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
     b_fc2 = bias_variable([11])
     z_fc2 = tf.add(tf.matmul(z_fc1_drop, W_fc2), b_fc2, name="outlayer")
     prob = tf.nn.softmax(z_fc2, name="probability")
+
     # cost function
     regularizer = tf.contrib.layers.l2_regularizer(lam)
     regularization = regularizer(W_fc1) + regularizer(W_fc2)
@@ -162,7 +133,7 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
                 print(str((time.strftime('%Y-%m-%d %H:%M:%S'))))
 
         # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
-        train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: 0.5, lam: lamda})
+        train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob, lam: lamda})
         print("train accuracy", train_acc)
         test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000], lam: lamda})
         print("test accuracy", test_acc)
@@ -171,17 +142,10 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
         saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
                                 'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
         saver.save(sess, "model/cnn_model.ckpt")
+
         # 将训练好的模型保存为.pb文件，方便在Android studio中使用
         output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
                                                                      output_node_names=['predict'])
         with tf.gfile.FastGFile('model/digital_gesture.pb',
                                 mode='wb') as f:  # ’wb’中w代表写文件，b代表将数据以二进制方式写入文件。
             f.write(output_graph_def.SerializeToString())
-
-
-if __name__ == "__main__":
-    print("载入数据集: " + str((time.strftime('%Y-%m-%d %H:%M:%S'))))
-    X_train, X_test, y_train, y_test = load_dataset()
-    print("开始训练: " + str((time.strftime('%Y-%m-%d %H:%M:%S'))))
-    cnn_model(X_train, y_train, X_test, y_test, 0.5, 1e-4, num_epochs=500, minibatch_size=16)
-    print("训练结束: " + str((time.strftime('%Y-%m-%d %H:%M:%S'))))
