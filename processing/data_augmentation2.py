@@ -12,7 +12,7 @@ import os
 
 dirs = r'/media/meta/Work/Study_and_Work/Graduation/GustureRecognition/dataSet/Images/picture/9'
 output = r'/media/meta/Free time/gene_pic'
-# output = r'/media/meta/Work/Study_and_Work/Graduation/GustureRecognition/dataSet/Images/generater_pic'
+# output = r'/media/meta/Work/Study_and_Work/Graduation/GustureRecognition/dataSet/Images/generate_pic'
 Gene = 10
 
 datagen = ImageDataGenerator(

@@ -3,13 +3,13 @@ import os
 
 
 def split_files():
-    dirs = os.listdir("generater_pic")
+    dirs = os.listdir("generate_pic")
     counter = 1
     index = 0
     for filename in dirs:
         if counter == 1:
             os.mkdir("split_pic//{}".format(str(index)))
-        im = Image.open("generater_pic//{}".format(filename))
+        im = Image.open("generate_pic//{}".format(filename))
         im.save("split_pic//{}//{}".format(str(index), filename))
         counter += 1
         if counter == 2001:
