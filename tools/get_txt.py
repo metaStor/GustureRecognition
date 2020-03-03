@@ -1,52 +1,59 @@
 import os
-import config as cfg
+
+path = r'../dataSet/Images/picture'
+start = 30
 
 
-class get_txt(object):
-
-    def __init__(self):
-        # self.path = cfg.IMAGES_PATH
-        self.path = r'/media/meta/Work/Study_and_Work/毕业论文/gusture/DATA'
-        self.output = os.path.join(cfg.DATA_PATH, 'ImageSets', 'Main')
-        self.count = 2945
-        self.bit = 6
-
-    '''
+def get_filename(self):
+    """
     得到文件名
     适用于一个文件夹下所有图片已经标号有序的情况
-    '''
-    def get_filename(self):
-        with open(os.path.join(self.output, 'trainval.txt'), 'a+') as f:
-            for file in sorted(os.listdir(self.path)):
-                name = file.strip().split('.')[0]
-                f.write(str(name) + '\n')
+    """
+    with open(os.path.join(self.output, 'trainval.txt'), 'a+') as f:
+        for file in sorted(os.listdir(self.path)):
+            name = file.strip().split('.')[0]
+            f.write(str(name) + '\n')
 
-    '''
+
+def rename_and_get_filename():
+    """
     重命名以及得到文件名
     适用于每个文件夹归属一个类别的情况
     如: a文件夹下, 全为a的图片
-    '''
-    def rename_and_get_filename(self):
-        files = [os.path.join(self.path, x) for x in sorted(os.listdir(self.path))
-                 if os.path.isdir(os.path.join(self.path, x))]
-        if not os.path.exists(self.output):
-            os.makedirs(self.output)
-            print('Create %s' % self.output)
-        with open(os.path.join(self.output, 'trainval.txt'), 'a+') as f:
-            for folder in files:
-                for file in sorted(os.listdir(folder)):
-                    old = os.path.join(folder, file)
-                    lenth = len(str(self.count))
-                    add = '0' * (self.bit - lenth)
-                    new = os.path.join(folder, str(add) + str(self.count) + '.jpg')
-                    # rename
-                    os.rename(old, new)
-                    # write to trainval.txt
-                    f.write(str(add) + str(self.count) + '\n')
-                    print('Processing %s image' % self.count)
-                    self.count += 1
-        print('Done! Summary: %s' % self.count)
+    """
+    # 得到path下的所有文件夹(排序)
+    files = [os.path.join(path, x) for x in sorted(os.listdir(path)) if os.path.isdir(os.path.join(path, x))]
+    for folder in files:
+        # Got image's class
+        splits = folder.split('/')
+        class_name = splits[len(splits) - 1]
+        print('Processing Class %s ...' % class_name)
+        # Init counter
+        count = start
+        for file in sorted(os.listdir(folder)):
+            # Got image's suffix
+            suffix = str(file.split('.')[1])
+            old = os.path.join(folder, file)
+            new = os.path.join(folder, (str(class_name) + '_' + str(count) + '.' + suffix))
+            # rename
+            os.rename(old, new)
+            count += 1
+    print('Done!')
+
+
+def check_files():
+    """
+    检查重命名后的文件是否丢失
+    """
+    # 得到path下的所有文件夹(排序)
+    files = [os.path.join(path, x) for x in sorted(os.listdir(path)) if os.path.isdir(os.path.join(path, x))]
+    for folder in files:
+        cnt = 1
+        for file in os.listdir(folder):
+            cnt += 1
+        print('The Summary of %s is : %s' % (folder, cnt))
 
 
 if __name__ == '__main__':
-    get_txt().rename_and_get_filename()
+    rename_and_get_filename()
+    check_files()
