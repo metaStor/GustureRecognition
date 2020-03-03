@@ -83,15 +83,15 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
     maxpool2 = max_pool_2x2(z2)  # max_pool2,shape [?,16,16,64]
 
     # conv3  效果比较好的一次模型是没有这一层，只有两次卷积层，隐藏单元100，训练20次
-    # W_conv3 = weight_variable([5, 5, 64, 128])
-    # b_conv3 = bias_variable([128])
-    # z3 = tf.nn.relu(conv2d(maxpool2, W_conv3) + b_conv3)
-    # maxpool3 = max_pool_2x2(z3)  # max_pool3,shape [?,8,8,128]
+    W_conv3 = weight_variable([5, 5, 64, 128])
+    b_conv3 = bias_variable([128])
+    z3 = tf.nn.relu(conv2d(maxpool2, W_conv3) + b_conv3)
+    maxpool3 = max_pool_2x2(z3)  # max_pool3,shape [?,8,8,128]
 
     # full connection1
-    W_fc1 = weight_variable([16 * 16 * 64, 100])
+    W_fc1 = weight_variable([8 * 8 * 128, 100])
     b_fc1 = bias_variable([100])
-    maxpool2_flat = tf.reshape(maxpool2, [-1, 16 * 16 * 64])
+    maxpool2_flat = tf.reshape(maxpool3, [-1, 16 * 16 * 64])
     z_fc1 = tf.nn.relu(tf.matmul(maxpool2_flat, W_fc1) + b_fc1)
     z_fc1_drop = tf.nn.dropout(z_fc1, keep_prob=kp)
 
