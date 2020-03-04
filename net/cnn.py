@@ -134,7 +134,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
     init = tf.global_variables_initializer()
     with tf.Session() as sess:
         sess.run(init)
-        for epoch in range(num_epochs + 1):
+        for epoch in range(1, num_epochs + 1):
             seed = seed + 1
             epoch_cost = 0.
             num_minibatches = int(X_train.shape[0] / minibatch_size)
