@@ -91,7 +91,7 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
     # full connection1
     W_fc1 = weight_variable([8 * 8 * 128, 100])
     b_fc1 = bias_variable([100])
-    maxpool2_flat = tf.reshape(maxpool3, [-1, 16 * 16 * 64])
+    maxpool2_flat = tf.reshape(maxpool3, [-1, 8 * 8 * 128])
     z_fc1 = tf.nn.relu(tf.matmul(maxpool2_flat, W_fc1) + b_fc1)
     z_fc1_drop = tf.nn.dropout(z_fc1, keep_prob=kp)
 
@@ -144,8 +144,8 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
         saver.save(sess, "model/cnn_model.ckpt")
 
         # 将训练好的模型保存为.pb文件，方便在Android studio中使用
-        output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
-                                                                     output_node_names=['predict'])
-        with tf.gfile.FastGFile('model/digital_gesture.pb',
-                                mode='wb') as f:  # ’wb’中w代表写文件，b代表将数据以二进制方式写入文件。
-            f.write(output_graph_def.SerializeToString())
+        # output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
+        #                                                              output_node_names=['predict'])
+        # with tf.gfile.FastGFile('model/digital_gesture.pb',
+        #                         mode='wb') as f:  # ’wb’中w代表写文件，b代表将数据以二进制方式写入文件。
+        #     f.write(output_graph_def.SerializeToString())
