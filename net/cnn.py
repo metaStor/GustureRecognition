@@ -2,6 +2,8 @@ import numpy as np
 import tensorflow as tf
 import math
 import time
+import datetime
+import os
 from tensorflow.python.framework import graph_util
 
 
@@ -64,7 +66,10 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
     return mini_batches
 
 
-def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450, minibatch_size=16):
+def cnn_model(X_train, y_train, X_test, y_test,
+              keep_prob, lamda, num_epochs=450,
+              minibatch_size=16, model_path='./'):
+
     X = tf.placeholder(tf.float32, [None, 64, 64, 3], name="input_x")
     y = tf.placeholder(tf.float32, [None, 11], name="input_y")
     kp = tf.placeholder_with_default(1.0, shape=(), name="keep_prob")
@@ -115,10 +120,21 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
 
     seed = 0
 
+    # 创建全局tensor
+    global_step = tf.train.create_global_step()
+
+    # 保存模型路径
+    output_path = os.path.join(model_path, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
+    if not os.path.exists(output_path):
+        os.makedirs(output_path)
+        print('Create the output dir in: ', str(output_path))
+
+    ckpt_file = os.path.join(output_path, 'gusture')
+
     init = tf.global_variables_initializer()
     with tf.Session() as sess:
         sess.run(init)
-        for epoch in range(num_epochs):
+        for epoch in range(num_epochs + 1):
             seed = seed + 1
             epoch_cost = 0.
             num_minibatches = int(X_train.shape[0] / minibatch_size)
@@ -131,17 +147,17 @@ def cnn_model(X_train, y_train, X_test, y_test, keep_prob, lamda, num_epochs=450
             if epoch % 10 == 0:
                 print("Cost after epoch %i: %f" % (epoch, epoch_cost))
                 print(str((time.strftime('%Y-%m-%d %H:%M:%S'))))
+            if epoch % 5000 == 0:
+                # save model
+                saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
+                                        'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
+                saver.save(sess, ckpt_file, global_step=global_step)
 
         # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
         train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob, lam: lamda})
         print("train accuracy", train_acc)
         test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000], lam: lamda})
         print("test accuracy", test_acc)
-
-        # save model
-        saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
-                                'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
-        saver.save(sess, "model/cnn_model.ckpt")
 
         # 将训练好的模型保存为.pb文件，方便在Android studio中使用
         # output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
