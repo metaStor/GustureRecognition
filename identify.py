@@ -11,6 +11,7 @@ import tensorflow as tf
 from net import cnn
 from PIL import Image, ImageDraw, ImageFont
 import numpy as np
+import os
 import scipy.misc
 
 
@@ -20,7 +21,9 @@ def load_parameters(weight):
     b_conv1 = tf.get_variable("b_conv1", shape=[32])
     W_conv2 = tf.get_variable("W_conv2", shape=[5, 5, 32, 64])
     b_conv2 = tf.get_variable("b_conv2", shape=[64])
-    W_fc1 = tf.get_variable("W_fc1", shape=[16 * 16 * 64, 100])
+    W_conv3 = tf.get_variable("W_conv3", shape=[5, 5, 64, 128])
+    b_conv3 = tf.get_variable("b_conv3", shape=[64])
+    W_fc1 = tf.get_variable("W_fc1", shape=[8 * 8 * 128, 100])
     b_fc1 = tf.get_variable("b_fc1", shape=[100])
     W_fc2 = tf.get_variable("W_fc2", shape=[100, 11])
     b_fc2 = tf.get_variable("b_fc2", shape=[11])
@@ -35,6 +38,8 @@ def load_parameters(weight):
         parameters["b_conv1"] = b_conv1.eval()
         parameters["W_conv2"] = W_conv2.eval()
         parameters["b_conv2"] = b_conv2.eval()
+        parameters["W_conv3"] = W_conv3.eval()
+        parameters["b_conv3"] = b_conv3.eval()
         parameters["W_fc1"] = W_fc1.eval()
         parameters["b_fc1"] = b_fc1.eval()
         parameters["W_fc2"] = W_fc2.eval()
@@ -48,6 +53,8 @@ def predict(parameters, X):
     b_conv1 = parameters["b_conv1"]
     W_conv2 = parameters["W_conv2"]
     b_conv2 = parameters["b_conv2"]
+    W_conv3 = parameters["W_conv3"]
+    b_conv3 = parameters["b_conv3"]
     W_fc1 = parameters["W_fc1"]
     b_fc1 = parameters["b_fc1"]
     W_fc2 = parameters["W_fc2"]
@@ -58,8 +65,10 @@ def predict(parameters, X):
     maxpool1 = cnn.max_pool_2x2(z1)
     z2 = tf.nn.relu(cnn.conv2d(maxpool1, W_conv2) + b_conv2)
     maxpool2 = cnn.max_pool_2x2(z2)
-    maxpool2_flat = tf.reshape(maxpool2, [-1, 16 * 16 * 64])
-    z_fc1 = tf.nn.relu(tf.matmul(maxpool2_flat, W_fc1) + b_fc1)
+    z3 = tf.nn.relu(cnn.conv2d(maxpool2, W_conv3) + b_conv3)
+    maxpool3 = cnn.max_pool_2x2(z3)
+    maxpool3_flat = tf.reshape(maxpool3, [-1, 8 * 8 * 128])
+    z_fc1 = tf.nn.relu(tf.matmul(maxpool3_flat, W_fc1) + b_fc1)
     logits = tf.matmul(z_fc1, W_fc2) + b_fc2
     logits = tf.nn.softmax(logits)
     c = tf.argmax(logits, 1)
@@ -75,7 +84,7 @@ def predict(parameters, X):
 
 # convert image to matrix
 def img_to_mat(picname):
-    im = Image.open("testset/{}".format(picname))
+    im = Image.open(os.path.join("testSet", picname))
     mat = np.asarray(im.convert('RGB'))  # 原始图片
     # im.show()
     # 新图片
@@ -85,7 +94,7 @@ def img_to_mat(picname):
         resized_im = resized.eval()
         new_mat = np.asarray(resized_im).reshape(1, 64, 64, 3)
     # print(new_mat)
-    # scipy.misc.imsave("dataset//new_pic//test.png",resized_im)
+    # scipy.misc.imsave("../dataSet/new_pic/test.png",resized_im)
     return mat, new_mat
 
 
