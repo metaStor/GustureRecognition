@@ -67,7 +67,7 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
 
 
 def cnn_model(X_train, y_train, X_test, y_test,
-              keep_prob, learning_rate, l2_regularizer=.0005,
+              keep_prob, learning_rate=1e-4, l2_regularizer=5e-4,
               num_epochs=500, save_epoch=500,
               minibatch_size=16, model_path='./'
               ):
@@ -122,7 +122,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
     # AdamOptimizer
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, name='AdamOptimizer')
     # Train option
-    train = optimizer.minimize(cost, global_step=global_steps)
+    train_op = optimizer.minimize(loss=cost, global_step=global_steps)
     # train = tf.train.AdamOptimizer().minimize(cost, global_step=global_step)
     # output_type='int32', name="predict"
     pred = tf.argmax(prob, 1, output_type="int32", name="predict")  # 输出结点名称predict方便后面保存为pb文件
@@ -140,9 +140,8 @@ def cnn_model(X_train, y_train, X_test, y_test,
 
     ckpt_file = os.path.join(output_path, 'gusture')
 
-    init = tf.global_variables_initializer()
     with tf.Session() as sess:
-        sess.run(init)
+        sess.run(tf.global_variables_initializer())
         for epoch in range(1, num_epochs + 1):
             seed = seed + 1
             epoch_cost = 0.
@@ -150,7 +149,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
             minibatches = random_mini_batches(X_train, y_train, minibatch_size, seed)
             for minibatch in minibatches:
                 (minibatch_X, minibatch_Y) = minibatch
-                _, minibatch_cost = sess.run([train, cost],
+                _, minibatch_cost = sess.run([train_op, cost],
                                              feed_dict={X: minibatch_X, y: minibatch_Y, kp: keep_prob})
                 epoch_cost += minibatch_cost / num_minibatches
             if epoch % 10 == 0:
@@ -162,6 +161,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
                                         'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
                 saver.save(sess, ckpt_file, global_step=global_steps)
                 print('Saving checkpoint-%d file' % epoch)
+                print("Global_step_train: ", sess.run(global_steps))
 
         # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
         train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob})
