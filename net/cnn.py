@@ -111,7 +111,10 @@ def cnn_model(X_train, y_train, X_test, y_test,
     regularization = regularizer(W_fc1) + regularizer(W_fc2)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=z_fc2)) + regularization
 
-    train = tf.train.AdamOptimizer().minimize(cost)
+    # 创建全局tensor
+    global_step = tf.train.create_global_step()
+
+    train = tf.train.AdamOptimizer().minimize(cost, global_step=global_step)
     # output_type='int32', name="predict"
     pred = tf.argmax(prob, 1, output_type="int32", name="predict")  # 输出结点名称predict方便后面保存为pb文件
     correct_prediction = tf.equal(pred, tf.argmax(y, 1, output_type='int32'))
@@ -119,9 +122,6 @@ def cnn_model(X_train, y_train, X_test, y_test,
     tf.set_random_seed(1)  # to keep consistent results
 
     seed = 0
-
-    # 创建全局tensor
-    global_step = tf.train.create_global_step()
 
     # 保存模型路径
     output_path = os.path.join(model_path, datetime.datetime.now().strftime('%Y_%m_%d_%H_%M'))
