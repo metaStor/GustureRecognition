@@ -67,13 +67,14 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
 
 
 def cnn_model(X_train, y_train, X_test, y_test,
-              keep_prob, lamda, num_epochs=450,
-              minibatch_size=16, model_path='./'):
-
+              keep_prob, learning_rate, l2_regularizer=.0005,
+              num_epochs=500, save_epoch=500,
+              minibatch_size=16, model_path='./'
+              ):
     X = tf.placeholder(tf.float32, [None, 64, 64, 3], name="input_x")
     y = tf.placeholder(tf.float32, [None, 11], name="input_y")
     kp = tf.placeholder_with_default(1.0, shape=(), name="keep_prob")
-    lam = tf.placeholder(tf.float32, name="lamda")
+    # lam = tf.placeholder(tf.float32, name="lamda")
 
     # conv1
     W_conv1 = weight_variable([5, 5, 3, 32])
@@ -107,14 +108,22 @@ def cnn_model(X_train, y_train, X_test, y_test,
     prob = tf.nn.softmax(z_fc2, name="probability")
 
     # cost function
-    regularizer = tf.contrib.layers.l2_regularizer(lam)
+    regularizer = tf.contrib.layers.l2_regularizer(l2_regularizer)
     regularization = regularizer(W_fc1) + regularizer(W_fc2)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=z_fc2)) + regularization
 
     # 创建全局tensor
-    global_step = tf.train.create_global_step()
+    global_steps = tf.train.create_global_step()
 
-    train = tf.train.AdamOptimizer().minimize(cost, global_step=global_step)
+    # Learning rate
+    learning_rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_steps,
+                                               decay_steps=200, decay_rate=0.1, staircase=False, name='learning_rate')
+
+    # AdamOptimizer
+    optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, name='AdamOptimizer')
+    # Train option
+    train = optimizer.minimize(cost, global_step=global_steps)
+    # train = tf.train.AdamOptimizer().minimize(cost, global_step=global_step)
     # output_type='int32', name="predict"
     pred = tf.argmax(prob, 1, output_type="int32", name="predict")  # 输出结点名称predict方便后面保存为pb文件
     correct_prediction = tf.equal(pred, tf.argmax(y, 1, output_type='int32'))
@@ -142,21 +151,24 @@ def cnn_model(X_train, y_train, X_test, y_test,
             for minibatch in minibatches:
                 (minibatch_X, minibatch_Y) = minibatch
                 _, minibatch_cost = sess.run([train, cost],
-                                             feed_dict={X: minibatch_X, y: minibatch_Y, kp: keep_prob, lam: lamda})
+                                             feed_dict={X: minibatch_X, y: minibatch_Y, kp: keep_prob})
                 epoch_cost += minibatch_cost / num_minibatches
             if epoch % 10 == 0:
                 print("Cost after epoch %i: %f" % (epoch, epoch_cost))
                 print(str((time.strftime('%Y-%m-%d %H:%M:%S'))))
-            if epoch % 5000 == 0:
+            if epoch % save_epoch == 0:
                 # save model
                 saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
                                         'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
-                saver.save(sess, ckpt_file, global_step=global_step)
+                saver.save(sess, ckpt_file, global_step=global_steps)
+                print('Saving checkpoint-%d file' % epoch)
 
         # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
-        train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob, lam: lamda})
+        train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob})
+        # train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob, lam: lamda})
         print("train accuracy", train_acc)
-        test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000], lam: lamda})
+        test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000]})
+        # test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000], lam: lamda})
         print("test accuracy", test_acc)
 
         # 将训练好的模型保存为.pb文件，方便在Android studio中使用
