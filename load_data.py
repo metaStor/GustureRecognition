@@ -14,9 +14,10 @@ from keras.utils import np_utils
 
 
 # load dataset
-def load_dataset():
+def load_dataset(cache):
+    print('Loading dataset in %s ...' % cache)
     # 划分训练集、测试集
-    data = h5py.File("dataSet/cache/data.h5", "r")
+    data = h5py.File(cache, "r")
     X_data = np.array(data['X'])  # data['X']是h5py._hl.dataset.Dataset类型，转化为array
     Y_data = np.array(data['Y'])
     # print(type(X_data))
