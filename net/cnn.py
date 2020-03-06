@@ -158,6 +158,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
             if epoch % save_epoch == 0:
                 # save model
                 saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
+                                        'W_conv3': W_conv3, 'b_conv3': b_conv3,
                                         'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
                 saver.save(sess, ckpt_file, global_step=global_steps)
                 print('Saving checkpoint-%d file' % epoch)
