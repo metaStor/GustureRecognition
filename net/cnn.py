@@ -69,7 +69,7 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
 def cnn_model(X_train, y_train, X_test, y_test,
               keep_prob, learning_rate=1e-4, l2_regularizer=5e-4,
               num_epochs=500, save_epoch=500,
-              minibatch_size=16, model_path='./'
+              minibatch_size=16, model_path='./', weight_file=None
               ):
     X = tf.placeholder(tf.float32, [None, 64, 64, 3], name="input_x")
     y = tf.placeholder(tf.float32, [None, 11], name="input_y")
@@ -140,8 +140,15 @@ def cnn_model(X_train, y_train, X_test, y_test,
 
     ckpt_file = os.path.join(output_path, 'gusture')
 
+    saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
+                            'W_conv3': W_conv3, 'b_conv3': b_conv3,
+                            'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
+
     with tf.Session() as sess:
         sess.run(tf.global_variables_initializer())
+        if weight_file is not None:
+            print('Restoring weight file for ', weight_file)
+            saver.restore(sess, tf.train.latest_checkpoint(weight_file))
         for epoch in range(1, num_epochs + 1):
             seed = seed + 1
             epoch_cost = 0.
@@ -157,9 +164,6 @@ def cnn_model(X_train, y_train, X_test, y_test,
                 print(str((time.strftime('%Y-%m-%d %H:%M:%S'))))
             if epoch % save_epoch == 0:
                 # save model
-                saver = tf.train.Saver({'W_conv1': W_conv1, 'b_conv1': b_conv1, 'W_conv2': W_conv2, 'b_conv2': b_conv2,
-                                        'W_conv3': W_conv3, 'b_conv3': b_conv3,
-                                        'W_fc1': W_fc1, 'b_fc1': b_fc1, 'W_fc2': W_fc2, 'b_fc2': b_fc2})
                 saver.save(sess, ckpt_file, global_step=global_steps)
                 print('Saving checkpoint-%d file' % epoch)
                 print("Global_step_train: ", sess.run(global_steps))
