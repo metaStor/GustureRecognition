@@ -22,7 +22,7 @@ def load_parameters(weight):
     W_conv2 = tf.get_variable("W_conv2", shape=[5, 5, 32, 64])
     b_conv2 = tf.get_variable("b_conv2", shape=[64])
     W_conv3 = tf.get_variable("W_conv3", shape=[5, 5, 64, 128])
-    b_conv3 = tf.get_variable("b_conv3", shape=[64])
+    b_conv3 = tf.get_variable("b_conv3", shape=[128])
     W_fc1 = tf.get_variable("W_fc1", shape=[8 * 8 * 128, 100])
     b_fc1 = tf.get_variable("b_fc1", shape=[100])
     W_fc2 = tf.get_variable("W_fc2", shape=[100, 11])
@@ -84,7 +84,7 @@ def predict(parameters, X):
 
 # convert image to matrix
 def img_to_mat(picname):
-    im = Image.open(os.path.join("testSet", picname))
+    im = Image.open(picname)
     mat = np.asarray(im.convert('RGB'))  # 原始图片
     # im.show()
     # 新图片
@@ -116,6 +116,6 @@ def display_result(mat, prediction):
 
 if __name__ == "__main__":
     mat, new_mat = img_to_mat("testSet/test.jpg")
-    parameters = load_parameters(weight="dataSet/models/model_2000")
+    parameters = load_parameters(weight="dataSet/models/model")
     prediction = predict(parameters, new_mat)
     display_result(mat, prediction)
