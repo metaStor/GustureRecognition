@@ -116,6 +116,6 @@ def display_result(mat, prediction):
 
 if __name__ == "__main__":
     mat, new_mat = img_to_mat("testSet/test.jpg")
-    parameters = load_parameters(weight="dataSet/models/model")
+    parameters = load_parameters(weight="dataSet/models/model_1")
     prediction = predict(parameters, new_mat)
     display_result(mat, prediction)

@@ -108,22 +108,24 @@ def cnn_model(X_train, y_train, X_test, y_test,
     prob = tf.nn.softmax(z_fc2, name="probability")
 
     # cost function
+    # regularizer = tf.contrib.layers.l2_regularizer(learning_rate)
     regularizer = tf.contrib.layers.l2_regularizer(l2_regularizer)
     regularization = regularizer(W_fc1) + regularizer(W_fc2)
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=z_fc2)) + regularization
 
     # 创建全局tensor
-    global_steps = tf.train.create_global_step()
+    # global_steps = tf.train.create_global_step()
 
     # Learning rate
-    learning_rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_steps,
-                                               decay_steps=200, decay_rate=0.1, staircase=False, name='learning_rate')
+    # learning_rate = tf.train.exponential_decay(learning_rate=learning_rate, global_step=global_steps,
+    #                                            decay_steps=3000, decay_rate=0.1, staircase=False, name='learning_rate')
 
     # AdamOptimizer
+    # optimizer = tf.train.AdamOptimizer(name='AdamOptimizer')
     optimizer = tf.train.AdamOptimizer(learning_rate=learning_rate, name='AdamOptimizer')
     # Train option
-    train_op = optimizer.minimize(loss=cost, global_step=global_steps)
-    # train = tf.train.AdamOptimizer().minimize(cost, global_step=global_step)
+    # train_op = optimizer.minimize(loss=cost, global_step=global_steps)
+    train_op = optimizer.minimize(cost)
     # output_type='int32', name="predict"
     pred = tf.argmax(prob, 1, output_type="int32", name="predict")  # 输出结点名称predict方便后面保存为pb文件
     correct_prediction = tf.equal(pred, tf.argmax(y, 1, output_type='int32'))
@@ -163,22 +165,20 @@ def cnn_model(X_train, y_train, X_test, y_test,
                 print("Cost after epoch %i: %f" % (epoch, epoch_cost))
                 print(str((time.strftime('%Y-%m-%d %H:%M:%S'))))
             if epoch % save_epoch == 0:
-                # save model
-                saver.save(sess, ckpt_file, global_step=global_steps)
+                # ** Save model **
+                saver.save(sess, ckpt_file + '-' + str(epoch))
                 print('Saving checkpoint-%d file' % epoch)
-                print("Global_step_train: ", sess.run(global_steps))
+                # print("Global_step_train: ", sess.run(global_steps))
+                # ** Test model **
+                # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
+                train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob})
+                print("train accuracy", train_acc)
+                test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000]})
+                print("test accuracy", test_acc)
 
-        # 这个accuracy是前面的accuracy，tensor.eval()和Session.run区别很小
-        train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob})
-        # train_acc = accuracy.eval(feed_dict={X: X_train[:1000], y: y_train[:1000], kp: keep_prob, lam: lamda})
-        print("train accuracy", train_acc)
-        test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000]})
-        # test_acc = accuracy.eval(feed_dict={X: X_test[:1000], y: y_test[:1000], lam: lamda})
-        print("test accuracy", test_acc)
-
-        # 将训练好的模型保存为.pb文件，方便在Android studio中使用
-        # output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
-        #                                                              output_node_names=['predict'])
-        # with tf.gfile.FastGFile('model/digital_gesture.pb',
-        #                         mode='wb') as f:  # ’wb’中w代表写文件，b代表将数据以二进制方式写入文件。
-        #     f.write(output_graph_def.SerializeToString())
+                # 将训练好的模型保存为.pb文件，方便在Android studio中使用
+                output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
+                                                                             output_node_names=['predict'])
+                with tf.gfile.FastGFile(output_path + '/digital_gesture-' + str(epoch) + '.pb',
+                                        mode='wb') as f:  # ’wb’中w代表写文件，b代表将数据以二进制方式写入文件。
+                    f.write(output_graph_def.SerializeToString())
