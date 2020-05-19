@@ -62,7 +62,6 @@ def random_mini_batches(X, Y, mini_batch_size=16, seed=0):
         mini_batch_Y = shuffled_Y[num_complete_minibatches * mini_batch_size: m]
         mini_batch = (mini_batch_X, mini_batch_Y)
         mini_batches.append(mini_batch)
-
     return mini_batches
 
 
@@ -88,7 +87,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
     z2 = tf.nn.relu(conv2d(maxpool1, W_conv2) + b_conv2)
     maxpool2 = max_pool_2x2(z2)  # max_pool2,shape [?,16,16,64]
 
-    # conv3  效果比较好的一次模型是没有这一层，只有两次卷积层，隐藏单元100，训练20次
+    # conv3 
     W_conv3 = weight_variable([5, 5, 64, 128])
     b_conv3 = bias_variable([128])
     z3 = tf.nn.relu(conv2d(maxpool2, W_conv3) + b_conv3)
@@ -111,6 +110,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
     # regularizer = tf.contrib.layers.l2_regularizer(learning_rate)
     regularizer = tf.contrib.layers.l2_regularizer(l2_regularizer)
     regularization = regularizer(W_fc1) + regularizer(W_fc2)
+    # 代价函数加入l2正则化, 加大惩罚权重值, 防止过拟合
     cost = tf.reduce_mean(tf.nn.softmax_cross_entropy_with_logits_v2(labels=y, logits=z_fc2)) + regularization
 
     # 创建全局tensor
@@ -177,6 +177,7 @@ def cnn_model(X_train, y_train, X_test, y_test,
                 print("test accuracy", test_acc)
 
                 # 将训练好的模型保存为.pb文件，方便在Android studio中使用
+                # AS中的TF库与Tensorflow-1.8.0 相对应, 否则pb模型在AS中会读取失败
                 output_graph_def = graph_util.convert_variables_to_constants(sess, sess.graph_def,
                                                                              output_node_names=['predict'])
                 with tf.gfile.FastGFile(output_path + '/digital_gesture-' + str(epoch) + '.pb',
